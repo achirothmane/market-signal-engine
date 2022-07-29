@@ -26,6 +26,13 @@ def run_filter_test(client, content_filter):
 
     # Give the endpoint time to spin up
     time.sleep(1)
+    # cleanup for the next
+    client.get(
+        url_for("form_delete", uuid="all"),
+        follow_redirects=True
+    )
+    if os.path.isfile("test-datastore/notification.txt"):
+        os.unlink("test-datastore/notification.txt")
 
     # Add our URL to the import page
     test_url = url_for('test_endpoint', _external=True)
@@ -34,6 +41,7 @@ def run_filter_test(client, content_filter):
         data={"url": test_url, "tag": ''},
         follow_redirects=True
     )
+
     assert b"Watch added" in res.data
 
     # Give the thread time to pick up the first version
@@ -67,6 +75,7 @@ def run_filter_test(client, content_filter):
         "tag": "my tag",
         "title": "my title",
         "headers": "",
+        "filter_failure_notification_send": 'y',
         "css_filter": content_filter,
         "fetch_backend": "html_requests"})
 
@@ -86,7 +95,7 @@ def run_filter_test(client, content_filter):
         time.sleep(3)
 
     # We should see something in the frontend
-    assert b'Did the page change its layout' in res.data
+    assert b'Warning, filter' in res.data
 
     # Now it should exist and contain our "filter not found" alert
     assert os.path.isfile("test-datastore/notification.txt")
@@ -132,3 +141,4 @@ def test_check_xpath_filter_failure_notification(client, live_server):
     time.sleep(1)
     run_filter_test(client, '//*[@id="nope-doesnt-exist"]')
 
+# Test that notification is never sent
