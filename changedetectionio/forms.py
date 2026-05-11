@@ -279,11 +279,43 @@ class TimeBetweenCheckForm(Form):
         return True
 
 
+class LabelAfterInputTableWidget(widgets.TableWidget):
+    """
+    Variant of WTForms' TableWidget that renders the input cell before the label cell,
+    so each row is <td>input</td><th>label</th> instead of the default <th>label</th><td>input</td>.
+    """
+
+    def __call__(self, field, **kwargs):
+        from markupsafe import Markup
+        from wtforms.widgets import html_params
+
+        html = []
+        if self.with_table_tag:
+            kwargs.setdefault("id", field.id)
+            html.append(f"<table {html_params(**kwargs)}>")
+        hidden = ""
+        for subfield in field:
+            if subfield.type in ("HiddenField", "CSRFTokenField"):
+                hidden += str(subfield)
+            else:
+                html.append(
+                    f"<tr><td>{hidden}{subfield}</td><th>{subfield.label}</th></tr>"
+                )
+                hidden = ""
+        if self.with_table_tag:
+            html.append("</table>")
+        if hidden:
+            html.append(hidden)
+        return Markup("".join(html))
+
+
 class EnhancedFormField(FormField):
     """
     An enhanced FormField that supports conditional validation with top-level error messages.
     Adds a 'top_errors' property for validation errors at the FormField level.
     """
+
+    widget = LabelAfterInputTableWidget()
 
     def __init__(self, form_class, label=None, validators=None, separator="-",
                  conditional_field=None, conditional_message=None, conditional_test_function=None, **kwargs):
