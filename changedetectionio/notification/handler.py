@@ -382,14 +382,17 @@ def process_notification(n_object: NotificationContextData, datastore):
         n_object['llm_summary'] = _llm_change_summary or (n_object.get('_llm_result') or {}).get('summary', '')
         n_object['llm_intent'] = n_object.get('_llm_intent', '')
 
-    # Re #3529: diff content from text/plain pages may contain raw '<' chars that break HTML emails.
-    # Escape only the diff variables before Jinja2 renders them into the template, so the user's
-    # own HTML in the notification body (e.g. <a href="{{watch_url}}">) is never touched.
-    # Diff placemarkers (e.g. @removed_PLACEMARKER_OPEN) contain no HTML chars so they survive
-    # html_escape and are still replaced with <span> tags by apply_service_tweaks later.
-    watch_mime_type = n_object.get('watch_mime_type')
-    if (watch_mime_type and 'text/' in watch_mime_type.lower() and 'html' not in watch_mime_type.lower()
-            and 'html' in requested_output_format):
+    # Escape diff/snapshot variables before Jinja renders them into an HTML notification.
+    # GHSA-q8xq-qg4x-wphg: inscriptis decodes HTML entities when converting text/html
+    # pages to snapshot text, so a page that visibly displays "&lt;a href...&gt;" yields
+    # literal "<a href...>" in the snapshot — which would otherwise render as live
+    # markup in HTML emails / Telegram (parse_mode=html) / Discord embeds, letting a
+    # watched page inject phishing links into the operator's notification channel.
+    # Also covers #3529 — raw '<' chars from text/plain pages breaking HTML email layout.
+    # The operator's own template HTML (e.g. <a href="{{watch_url}}">) is outside the
+    # variable values so it stays untouched. Diff placemarkers contain no HTML chars,
+    # so they survive escape and are still replaced with <span> tags later.
+    if 'html' in requested_output_format:
         from markupsafe import escape as html_escape
         _page_content_keys = {'raw_diff', 'current_snapshot', 'prev_snapshot', 'triggered_text'}
         for key in [k for k in notification_parameters if k.startswith('diff') or k in _page_content_keys]:
