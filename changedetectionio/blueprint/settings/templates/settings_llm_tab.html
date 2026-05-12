@@ -30,6 +30,10 @@
       <div class="stab-overview-text">
         <strong>{{ _('Intent filtering') }}</strong>
         <p>{{ _('Each watch or tag can carry a plain-text intent — %(ex1)s or %(ex2)s. On every detected change the AI evaluates the diff against it and suppresses irrelevant noise.', ex1='<strong>"notify me only when the price drops"</strong>', ex2='<strong>"alert when the item goes out of stock"</strong>') | safe }}</p>
+        <p><small>{{ _('Tip: intent evaluation benefits from a capable model — recommended %(local)s locally, or %(gpt)s / %(gemini)s. Very small models (≤3B) may misjudge numeric comparisons.',
+              local='<code>qwen2.5:7b</code>',
+              gpt='<code>gpt-4o-mini</code>',
+              gemini='<code>gemini-2.0-flash</code>') | safe }}</small></p>
       </div>
     </div>
     <div class="stab-overview-feature">
