@@ -86,8 +86,30 @@ LLM_DEFAULT_MAX_SUMMARY_TOKENS = 3000
 # to scale; cloud-LLM users hit this default unmodified, preserving prior cost defaults.
 JSON_RESPONSE_MAX_TOKENS = 400
 
-# Default prompt used when the user hasn't configured llm_change_summary
-DEFAULT_CHANGE_SUMMARY_PROMPT = "You are given a standard unix patch/diff document (lines starting with + are added, lines starting with - are removed, and lines starting with ~ are content that was merely moved/reordered and exists on both sides — do NOT report ~ lines as added or removed). Describe in plain English what changed — first you will scan for items that were simply moved around in the order and just mention that they were changed. list what was added or removed as bullet points, including key details for each item. Be careful of content that merely just moved around, you should mention that it moved but dont report that it was added/removed etc. Be considerate of the style content you are summarising the change of, adjust your report accordingly. Do not quote non-English text verbatim; translate and summarise all content into English. Your entire response must be in English."
+# Default prompt used when the user hasn't configured llm_change_summary.
+# This owns the OUTPUT FORMAT (structure, sections, style, language). The system prompt
+# in prompt_builder.build_change_summary_system_prompt() only covers how to READ the diff.
+# Users can replace this entirely (e.g. "Just tell me the new timestamp.") without
+# fighting hard-coded structure rules from the system prompt.
+DEFAULT_CHANGE_SUMMARY_PROMPT = (
+    "Describe what changed in plain English using these sections, in this fixed order — "
+    "omit a section entirely if there is nothing to report for it:\n"
+    "  Added: ...\n"
+    "  Changed: ...\n"
+    "  Removed: ...\n"
+    "The Removed section MUST always be last. Never place removals before additions or changes.\n\n"
+    "List items as bullet points with key details for each one. Be considerate of the style "
+    "of content you are summarising and adjust your report accordingly.\n"
+    "Do not list standalone timestamps like '3 hours ago', 'Yesterday', '2 minutes ago' as added "
+    "or removed items — they are not meaningful content changes.\n"
+    "For content-heavy pages (news, listings, feeds): quote or paraphrase the specific new "
+    "headlines, items, or entries that were added — do not collapse them into vague phrases "
+    "like 'new articles were added' or 'section was expanded'.\n"
+    "For large blocks of new text (full articles, documents, long paragraphs): briefly summarise "
+    "the substance in 1-2 sentences capturing the key point — do not just repeat the title.\n\n"
+    "Do not quote non-English text verbatim; translate and summarise all content into English. "
+    "Your entire response must be in English."
+)
 
 
 def _summary_max_tokens(diff: str, max_cap: int = LLM_DEFAULT_MAX_SUMMARY_TOKENS) -> int:
