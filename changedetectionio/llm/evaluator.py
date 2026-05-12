@@ -87,7 +87,7 @@ LLM_DEFAULT_MAX_SUMMARY_TOKENS = 3000
 JSON_RESPONSE_MAX_TOKENS = 400
 
 # Default prompt used when the user hasn't configured llm_change_summary
-DEFAULT_CHANGE_SUMMARY_PROMPT = "Describe in plain English what changed — list what was added or removed as bullet points, including key details for each item. Be careful of content that merely just moved around, you should mention that it moved but dont report that it was added/removed etc. Be considerate of the style content you are summarising the change of, adjust your report accordingly. Do not quote non-English text verbatim; translate and summarise all content into English. Your entire response must be in English."
+DEFAULT_CHANGE_SUMMARY_PROMPT = "You are given a standard unix patch/diff document (lines starting with + are added, lines starting with - are removed, and lines starting with ~ are content that was merely moved/reordered and exists on both sides — do NOT report ~ lines as added or removed). Describe in plain English what changed — first you will scan for items that were simply moved around in the order and just mention that they were changed. list what was added or removed as bullet points, including key details for each item. Be careful of content that merely just moved around, you should mention that it moved but dont report that it was added/removed etc. Be considerate of the style content you are summarising the change of, adjust your report accordingly. Do not quote non-English text verbatim; translate and summarise all content into English. Your entire response must be in English."
 
 
 def _summary_max_tokens(diff: str, max_cap: int = LLM_DEFAULT_MAX_SUMMARY_TOKENS) -> int:
