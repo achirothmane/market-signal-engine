@@ -104,22 +104,12 @@
     <label for="llm-provider">{{ _('Provider') }}</label>
     <select id="llm-provider" onchange="llmOnProviderChange(this.value)">
       <option value="">— {{ _('select a provider') }} —</option>
-      <optgroup label="OpenAI">
-        <option value="openai">OpenAI</option>
-      </optgroup>
-      <optgroup label="Anthropic">
         <option value="anthropic">Anthropic</option>
-      </optgroup>
-      <optgroup label="Google">
         <option value="gemini">Google (Gemini)</option>
-      </optgroup>
-      <optgroup label="{{ _('Local / Self-hosted') }}">
-        <option value="ollama">Ollama (local)</option>
+        <option value="ollama">Ollama</option>
+        <option value="openai">OpenAI</option>
         <option value="openai_compatible">{{ _('OpenAI-compatible (vLLM, LM Studio, llama.cpp)') }}</option>
-      </optgroup>
-      <optgroup label="OpenRouter">
         <option value="openrouter">OpenRouter (200+ models)</option>
-      </optgroup>
     </select>
   </div>
 
@@ -162,7 +152,6 @@
 
   <div class="pure-control-group">
     {{ render_field(form.llm.form.llm_model,
-                    readonly=True,
                     placeholder=_("Enter API key and click 'Load available models'")) }}
   </div>
 

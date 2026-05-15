@@ -1092,7 +1092,7 @@ class globalSettingsLLMForm(Form):
     No separate provider dropdown needed — litellm routes automatically:
       gpt-4o-mini                           → OpenAI
       claude-3-5-haiku-20251001             → Anthropic
-      ollama/llama3.2                       → Ollama (local)
+      ollama/llama3.2                       → Ollama
       openrouter/google/gemma-3-12b-it:free → OpenRouter (free tier)
       gemini/gemini-2.0-flash               → Google Gemini
       azure/gpt-4o                          → Azure OpenAI
