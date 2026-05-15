@@ -929,10 +929,6 @@ msgid "select a provider"
 msgstr ""
 
 #: changedetectionio/blueprint/settings/templates/settings_llm_tab.html
-msgid "Local / Self-hosted"
-msgstr ""
-
-#: changedetectionio/blueprint/settings/templates/settings_llm_tab.html
 msgid "OpenAI-compatible (vLLM, LM Studio, llama.cpp)"
 msgstr ""
 
