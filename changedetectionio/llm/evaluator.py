@@ -120,22 +120,25 @@ def _summary_max_tokens(diff: str, max_cap: int = LLM_DEFAULT_MAX_SUMMARY_TOKENS
 
 def apply_local_token_multiplier(base_max_tokens: int, llm_cfg: dict) -> int:
     """
-    Scale max_tokens for self-hosted OpenAI-compatible endpoints (vLLM, LM Studio, llama.cpp).
+    Scale max_tokens for endpoints that commonly serve reasoning models
+    (Ollama — self-hosted or ollama.com cloud — and OpenAI-compatible servers like
+    vLLM, LM Studio, llama.cpp).
 
     Reasoning models (Qwen3, DeepSeek-R1, Gemma 3, etc.) emit chain-of-thought into
     `message.reasoning_content` BEFORE the final answer lands in `message.content`.
-    Without enough headroom the request truncates mid-thought (`finish_reason='length'`)
-    and the answer never lands — callers see an empty string and silently fall through
-    to safe defaults, hiding the problem.
+    Without enough headroom the request truncates mid-thought (`finish_reason='length'`
+    or `'stop'` with empty content) and the answer never lands — callers see an empty
+    string and silently fall through to safe defaults, hiding the problem.
 
-    Local self-hosted models cost no per-token money, so headroom is cheap; cloud
-    providers (OpenAI, Anthropic, Gemini, OpenRouter) keep their original tight caps
-    so existing users see no cost change.
+    Cloud providers with stable, non-reasoning defaults (OpenAI, Anthropic, Gemini,
+    OpenRouter) keep their original tight caps so existing users see no behavior or
+    cost change. Ollama / OpenAI-compatible users can dial the multiplier down to 1x
+    in Settings → AI → Provider if they want to keep costs tight on a paid endpoint.
 
-    Activated only when `llm_cfg['provider_kind'] == 'openai_compatible'`.
+    Activated when `llm_cfg['provider_kind']` is `'ollama'` or `'openai_compatible'`.
     Multiplier defaults to 5x and is user-configurable in Settings → AI → Provider.
     """
-    if (llm_cfg or {}).get('provider_kind') != 'openai_compatible':
+    if (llm_cfg or {}).get('provider_kind') not in ('ollama', 'openai_compatible'):
         return base_max_tokens
     try:
         multiplier = int(llm_cfg.get('local_token_multiplier') or 5)
@@ -399,6 +402,7 @@ def run_setup(watch, datastore, snapshot_text: str) -> None:
             api_base=cfg.get('api_base'),
             max_tokens=apply_local_token_multiplier(JSON_RESPONSE_MAX_TOKENS, cfg),
             extra_body=_thinking_extra_body(cfg['model'], int(datastore.data['settings']['application'].get('llm_thinking_budget', LLM_DEFAULT_THINKING_BUDGET) or 0)),
+            debug=bool(datastore.data['settings']['application'].get('llm_debug', False)),
         )
         _check_token_budget(watch, cfg, tokens)
         accumulate_global_tokens(datastore, tokens, model=cfg['model'])
@@ -472,7 +476,7 @@ class DiffPrefs:
 
 
 def build_summary_cache_prompt(effective_prompt: str, max_summary_tokens: int,
-                                prefs: DiffPrefs = None) -> str:
+                                prefs: DiffPrefs = None, model: str = '') -> str:
     """
     Compose the full cache-key string passed to save/get_llm_diff_summary.
 
@@ -480,6 +484,10 @@ def build_summary_cache_prompt(effective_prompt: str, max_summary_tokens: int,
     worker-side pre-cache is hit by an unmodified UI request. Same helper must
     be used by both the worker pre-cache write and the UI diff route read,
     otherwise the prompt hashes diverge and the cache file isn't found.
+
+    The active model name is folded into the key so switching models
+    (e.g. qwen3 → gpt-4o) invalidates stale summaries that were generated
+    by a different model with potentially different phrasing/quality.
     """
     if prefs is None:
         prefs = DiffPrefs()
@@ -488,6 +496,7 @@ def build_summary_cache_prompt(effective_prompt: str, max_summary_tokens: int,
         + prefs.cache_key_suffix()
         + f'\x00sys:{build_change_summary_system_prompt()}'
         + f'\x00max_tokens:{max_summary_tokens}'
+        + f'\x00model:{model}'
     )
 
 
@@ -551,6 +560,7 @@ def summarise_change(watch, datastore, diff: str, current_snapshot: str = '') ->
                 cfg,
             ),
             extra_body=_extra_body,
+            debug=bool(datastore.data['settings']['application'].get('llm_debug', False)),
         )
         raw, tokens = _resp[0], _resp[1]
         input_tokens  = _resp[2] if len(_resp) > 2 else 0
@@ -613,6 +623,7 @@ def preview_extract(watch, datastore, content: str) -> dict | None:
             api_base=cfg.get('api_base'),
             max_tokens=apply_local_token_multiplier(JSON_RESPONSE_MAX_TOKENS, cfg),
             extra_body=_thinking_extra_body(cfg['model'], int(datastore.data['settings']['application'].get('llm_thinking_budget', LLM_DEFAULT_THINKING_BUDGET) or 0)),
+            debug=bool(datastore.data['settings']['application'].get('llm_debug', False)),
         )
         accumulate_global_tokens(datastore, tokens, model=cfg['model'])
         result = parse_preview_response(raw)
@@ -697,6 +708,7 @@ def evaluate_change(watch, datastore, diff: str, current_snapshot: str = '') -> 
             api_base=cfg.get('api_base'),
             max_tokens=apply_local_token_multiplier(JSON_RESPONSE_MAX_TOKENS, cfg),
             extra_body=_thinking_extra_body(cfg['model'], int(datastore.data['settings']['application'].get('llm_thinking_budget', LLM_DEFAULT_THINKING_BUDGET) or 0)),
+            debug=bool(datastore.data['settings']['application'].get('llm_debug', False)),
         )
         raw, tokens = _resp[0], _resp[1]
         input_tokens  = _resp[2] if len(_resp) > 2 else 0
