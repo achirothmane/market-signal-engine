@@ -2,7 +2,7 @@ name: Market Signal Engine - Source Runtime Smoke
 on:
   push:
     branches:
-      - work/runtime-smoke-and-operating-contract
+      - "work/**"
       - main
     paths:
       - ".github/workflows/market-signal-runtime-smoke.yml"
