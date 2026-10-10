@@ -1,0 +1,66 @@
+name: Market Signal Engine - Source Runtime Smoke
+on:
+  push:
+    branches:
+      - work/runtime-smoke-and-operating-contract
+      - main
+    paths:
+      - ".github/workflows/market-signal-runtime-smoke.yml"
+      - "requirements.txt"
+      - "changedetectionio/**"
+      - "changedetection.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install actual inherited runtime requirements
+        run: python -m pip install --disable-pip-version-check --prefer-binary -r requirements.txt
+      - name: Verify CLI can load dependencies
+        run: |
+          set -euo pipefail
+          python changedetection.py --version | tee /tmp/mse-version.txt
+          grep -F '0.60.8' /tmp/mse-version.txt
+      - name: Start fork code on ephemeral localhost and verify HTTP
+        env:
+          DISABLE_VERSION_CHECK: "true"
+          LLM_FEATURES_DISABLED: "true"
+          FETCH_WORKERS: "1"
+          LOGGER_LEVEL: "WARNING"
+          LISTEN_HOST: "127.0.0.1"
+          PORT: "5398"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mse-datastore"
+          python changedetection.py -C -d "$RUNNER_TEMP/mse-datastore" -h 127.0.0.1 -p 5398 > "$RUNNER_TEMP/mse-runtime.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
+          code="000"
+          for attempt in $(seq 1 45); do
+            code=$(curl --max-time 2 --silent --output "$RUNNER_TEMP/home.html" --write-out "%{http_code}" http://127.0.0.1:5398/ || true)
+            if [ "$code" = "200" ]; then
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "Server exited before becoming ready"
+              tail -n 90 "$RUNNER_TEMP/mse-runtime.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [ "$code" != "200" ]; then
+            echo "HTTP startup failed, last status: $code"
+            tail -n 90 "$RUNNER_TEMP/mse-runtime.log"
+            exit 1
+          fi
+          grep -Eqi 'change.?detect|watch' "$RUNNER_TEMP/home.html"
+          echo "FORK_SOURCE_HTTP_STARTUP: PASS"
+          echo "Not a persistence, remote-change detection, browser automation or production deployment test."
