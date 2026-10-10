@@ -165,7 +165,7 @@ def test_owned_page_change_history_and_negative_no_change(
     if batch_path:
         output = Path(batch_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(batch, indent=2, sort_keys=True) + "\\n")
+        output.write_text(json.dumps(batch, indent=2, sort_keys=True) + "\n")
     print("DATA_ENGINE_BATCH_SERIALIZATION_CONTRACT: PASS")
 
     evidence_path = os.getenv("MSE_EVIDENCE_PATH")
