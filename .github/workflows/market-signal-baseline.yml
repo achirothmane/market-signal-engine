@@ -1,0 +1,54 @@
+name: Market Signal Engine - Upstream Baseline
+on:
+  push:
+    branches:
+      - main
+      - import/upstream-0.60.8
+    paths:
+      - "changedetectionio/**"
+      - "changedetection.py"
+      - "docs/api-spec.yaml"
+      - "LICENSE"
+      - "UPSTREAM.md"
+      - "requirements*.txt"
+      - ".github/workflows/market-signal-baseline.yml"
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upstream-static-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check exact baseline provenance and license
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'Apache License' LICENSE
+          grep -q '09881f8b26aa01a2be66c5f63daf54a79a42b6bd' UPSTREAM.md
+          grep -q "__version__ = '0.60.8'" changedetectionio/__init__.py
+          test -f changedetection.py
+          test -f Dockerfile
+          test -f docs/api-spec.yaml
+          test ! -f .github/workflows/codeql-analysis.yml
+      - name: Compile Python application source without launching services
+        run: python -m compileall -q changedetectionio changedetection.py
+      - name: Install lean static validation tools
+        run: python -m pip install --disable-pip-version-check "ruff>=0.11.2,<0.14" "openapi-spec-validator>=0.7,<0.9" "PyYAML>=6,<7"
+      - name: Run upstream-recommended blocking static rules
+        run: ruff check . --select E9,F63,F7,F82,INT
+      - name: Validate copied upstream OpenAPI document
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          from openapi_spec_validator import validate_spec
+          spec = yaml.safe_load(Path('docs/api-spec.yaml').read_text(encoding='utf-8'))
+          validate_spec(spec)
+          print('UPSTREAM_OPENAPI_VALID: PASS')
+          PY
