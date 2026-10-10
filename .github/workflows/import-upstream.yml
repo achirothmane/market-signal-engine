@@ -26,8 +26,34 @@ jobs:
           test "$(git rev-parse --is-shallow-repository)" = "false"
           test -f LICENSE
           grep -q 'Apache License' LICENSE
+          # GitHub Actions' scoped GITHUB_TOKEN cannot push third-party workflow
+          # definitions. Remove them from imported history; preserve all app source.
+          python -m pip install --quiet 'git-filter-repo==2.47.0'
+          git filter-repo --force --path .github/workflows/ --invert-paths
+          test -f LICENSE
+          test -f changedetection.py
+          test ! -d .github/workflows
+          cat > UPSTREAM.md <<'EOF'
+          # Original upstream and provenance
+
+          This independent source import is derived from [changedetection.io](https://github.com/dgtlmoon/changedetection.io)
+          original release `0.60.8`, original Git commit `09881f8b26aa01a2be66c5f63daf54a79a42b6bd`.
+          Original source: https://github.com/dgtlmoon/changedetection.io/tree/0.60.8
+
+          This import includes upstream application history with `.github/workflows/`
+          removed from *all imported commits*, due to the GitHub Actions token's workflow
+          permissions. As a result **all rewritten Git commit IDs differ from upstream**.
+          Do not mistake this repository for a GitHub-network fork. Retain the Apache-2.0
+          license, notices, author attribution, and acknowledge the upstream project.
+          Functional claims require independent baseline tests before release.
+          EOF
+          git config user.name "Portfolio Import Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add UPSTREAM.md
+          git commit --quiet -m "docs: record upstream release, original SHA and filtered history"
           git remote add destination "https://x-access-token:${GH_TOKEN}@github.com/achirothmane/market-signal-engine.git"
           git push destination "$EXPECTED_UPSTREAM_SHA:refs/heads/import/upstream-0.60.8"
-          echo "IMPORTED_PINNED_UPSTREAM_HISTORY=$actual" >> "$GITHUB_STEP_SUMMARY"
+          echo "UPSTREAM_ORIGINAL_COMMIT=$actual" >> "$GITHUB_STEP_SUMMARY"
+          echo "IMPORTED_HISTORY_REWRITTEN_TO_REMOVE_UPSTREAM_WORKFLOWS=true" >> "$GITHUB_STEP_SUMMARY"
           echo "IMPORT_BRANCH=import/upstream-0.60.8" >> "$GITHUB_STEP_SUMMARY"
-          echo "This is an imported Git-history branch, NOT a GitHub network fork." >> "$GITHUB_STEP_SUMMARY"
+          echo "Rewritten upstream application history: upstream CI workflows removed. This is NOT a GitHub network fork." >> "$GITHUB_STEP_SUMMARY"
