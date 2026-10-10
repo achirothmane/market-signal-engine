@@ -8,6 +8,10 @@ import json
 import os
 import time
 from pathlib import Path
+from datetime import datetime, timezone
+
+from jsonschema import FormatChecker, validate
+from scripts.market_signal_handoff import make_snapshot_batch
 
 from flask import url_for
 
@@ -136,6 +140,34 @@ def test_owned_page_change_history_and_negative_no_change(
             "no cross-system Data Engine integration asserted"
         ]
     }
+    batch = make_snapshot_batch(
+        source_id="owned-mse-fixture-100",
+        source_ref="owned-fixture:market-signal-ci",
+        baseline=initial_body,
+        changed=changed_body,
+        observed_at=datetime.now(timezone.utc),
+        rights="owned-ci-fixture",
+        redistribute=True,
+    )
+    schema_path = (
+        Path(__file__).resolve().parents[2]
+        / "docs/contracts/data-engine-batch-v1.schema.json"
+    )
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    validate(instance=batch, schema=schema, format_checker=FormatChecker())
+    assert [o["raw_value"] for o in batch["observations"]] == [
+        evidence["initial_snapshot_sha256"],
+        evidence["changed_snapshot_sha256"],
+    ]
+    assert all(o["redistribute"] for o in batch["observations"])
+    assert batch["observations"][0]["entity_hint"] != batch["observations"][1]["entity_hint"]
+    batch_path = os.getenv("MSE_BATCH_PATH")
+    if batch_path:
+        output = Path(batch_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(batch, indent=2, sort_keys=True) + "\n")
+    print("DATA_ENGINE_BATCH_SERIALIZATION_CONTRACT: PASS")
+
     evidence_path = os.getenv("MSE_EVIDENCE_PATH")
     if evidence_path:
         output = Path(evidence_path)

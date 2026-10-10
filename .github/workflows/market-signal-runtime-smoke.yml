@@ -8,6 +8,8 @@ on:
       - ".github/workflows/market-signal-runtime-smoke.yml"
       - "requirements.txt"
       - "changedetectionio/**"
+      - "scripts/**"
+      - "docs/contracts/**"
       - "changedetection.py"
   workflow_dispatch:
 permissions:
@@ -67,12 +69,15 @@ jobs:
       - name: Test owned HTML page baseline change and no-op through actual watch API
         env:
           MSE_EVIDENCE_PATH: ${{ runner.temp }}/mse-owned-page-evidence.json
+          MSE_BATCH_PATH: ${{ runner.temp }}/mse-data-engine-batch.json
         run: python -m pytest changedetectionio/tests/test_market_signal_owned_fixture.py -q --disable-warnings --maxfail=1
       - name: Upload redacted local evidence after successful proof
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: market-signal-owned-page-evidence
-          path: ${{ runner.temp }}/mse-owned-page-evidence.json
+          path: |
+            ${{ runner.temp }}/mse-owned-page-evidence.json
+            ${{ runner.temp }}/mse-data-engine-batch.json
           if-no-files-found: error
           retention-days: 7
