@@ -1,3 +1,7 @@
+> **Market Signal Engine — source-backed development fork (not yet a commercial release).** This repository preserves the application source of [changedetection.io](https://github.com/dgtlmoon/changedetection.io) release 0.60.8 under Apache-2.0, with Git history rewritten solely to remove upstream GitHub workflow definitions during import. GitHub reports this as an independent repository (not a native Fork). See [original source attribution](UPSTREAM.md) and [our engineering scope and test gates](docs/MARKET-SIGNAL-ENGINE.md). The original upstream README follows unchanged below; any hosted-service/pricing links refer to **the original project's offering**, not ours. Our own deployment, buyer benefits and revenue are not yet proven. 
+
+---
+
 # Detect Website Changes Automatically — Monitor Web Page Changes in Real Time
 
 Monitor websites for updates — get notified via Discord, Email, Slack, Telegram, Webhook and many more.
