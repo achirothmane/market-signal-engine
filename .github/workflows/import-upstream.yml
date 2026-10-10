@@ -1,0 +1,33 @@
+name: Import pinned upstream history (once)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-upstream.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import-history:
+    if: github.repository == 'achirothmane/market-signal-engine'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Import the genuine upstream Git history into a non-default branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EXPECTED_UPSTREAM_SHA: "09881f8b26aa01a2be66c5f63daf54a79a42b6bd"
+        run: |
+          set -euo pipefail
+          git clone --quiet --no-checkout --branch "0.60.8" https://github.com/dgtlmoon/changedetection.io.git upstream
+          cd upstream
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$EXPECTED_UPSTREAM_SHA"
+          test "$(git rev-parse --is-shallow-repository)" = "false"
+          test -f LICENSE
+          grep -q 'Apache License' LICENSE
+          git remote add destination "https://x-access-token:${GH_TOKEN}@github.com/achirothmane/market-signal-engine.git"
+          git push destination "$EXPECTED_UPSTREAM_SHA:refs/heads/import/upstream-0.60.8"
+          echo "IMPORTED_PINNED_UPSTREAM_HISTORY=$actual" >> "$GITHUB_STEP_SUMMARY"
+          echo "IMPORT_BRANCH=import/upstream-0.60.8" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is an imported Git-history branch, NOT a GitHub network fork." >> "$GITHUB_STEP_SUMMARY"
