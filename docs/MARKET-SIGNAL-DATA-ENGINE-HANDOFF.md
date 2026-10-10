@@ -1,6 +1,6 @@
 # Market Signal Engine → Data Engine observation handoff (v1)
 
-**Status (2026-10-10): PASS — inherited watch integration, producer schema serialization and independent Data Engine Go \`extract.LoadBatch\` consumer acceptance.** Not a live service-to-service connection, AI/semantic inference, or market truth.
+**Status (2026-10-10): PASS — inherited watch integration, producer schema serialization and independent Data Engine Go `extract.LoadBatch` consumer acceptance.** Not a live service-to-service connection, AI/semantic inference, or market truth.
 
 ## Existing target — no new analysis engine
 
@@ -32,7 +32,7 @@ The owned-fixture integration test:
 - maps exactly those two retrieved snapshot **byte strings** into the Data Engine Batch JSON and validates it against the local schema;
 - uploads the redacted `mse-owned-page-evidence.json` and `mse-data-engine-batch.json` as private-to-run ephemeral GitHub Actions artifacts.
 
-**Consumer evidence:** the exact data batch from [MSE Actions run 38089677370](https://github.com/achirothmane/market-signal-engine/actions/runs/38089677370) (artifact \`11683373443\`) was pinned in [Data Engine PR #22](https://github.com/achirothmane/data-engine/pull/22), which passed \`go test ./...\`, \`go vet ./...\` and its additional product CI, then merged as \`8ca22b754364206175e474848af744304fc5bb5d\`. The native \`extract.LoadBatch\` Go test verifies the decoded observations and pair hash. **Boundary:** this proves producer→artifact→native consumer interoperability, **not** automatic delivery, ongoing cross-service operation or extraction of prices from arbitrary sites.
+**Consumer evidence:** the exact data batch from [MSE Actions run 38089677370](https://github.com/achirothmane/market-signal-engine/actions/runs/38089677370) (artifact `11683373443`) was pinned in [Data Engine PR #22](https://github.com/achirothmane/data-engine/pull/22), which passed `go test ./...`, `go vet ./...` and its additional product CI, then merged as `8ca22b754364206175e474848af744304fc5bb5d`. The native `extract.LoadBatch` Go test verifies the decoded observations and pair hash. **Boundary:** this proves producer→artifact→native consumer interoperability, **not** automatic delivery, ongoing cross-service operation or extraction of prices from arbitrary sites.
 
 ## Rights, provenance and economic limits
 
