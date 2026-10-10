@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/achirothmane/market-signal-engine/blob/main/docs/contracts/data-engine-batch-v1.schema.json",
+  "title": "Market Signal Engine to Data Engine extract.Batch v1",
+  "description": "Wire subset matches github.com/achirothmane/data-engine/internal/extract/types.go Batch + model.Observation. Validates serialization only, not a live Data Engine call.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "job_id",
+    "kind",
+    "content_sha256",
+    "observations",
+    "warnings"
+  ],
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "const": "market_signal_snapshots"
+    },
+    "content_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entity_hint",
+          "field",
+          "raw_value",
+          "source_id",
+          "source_ref",
+          "source_locator",
+          "observed_at",
+          "retrieved_at",
+          "license",
+          "redistribute",
+          "extraction_method",
+          "content_sha256"
+        ],
+        "properties": {
+          "entity_hint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "field": {
+            "const": "snapshot_sha256"
+          },
+          "raw_value": {
+            "$ref": "#/$defs/hash"
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_locator": {
+            "enum": [
+              "snapshot:baseline",
+              "snapshot:changed"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1
+          },
+          "redistribute": {
+            "type": "boolean"
+          },
+          "extraction_method": {
+            "const": "market-signal:versioned-snapshot-hash"
+          },
+          "content_sha256": {
+            "$ref": "#/$defs/hash"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "license": {
+                  "const": "unverified"
+                }
+              },
+              "required": [
+                "license"
+              ]
+            },
+            "then": {
+              "properties": {
+                "redistribute": {
+                  "const": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}
