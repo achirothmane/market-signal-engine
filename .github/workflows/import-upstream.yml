@@ -52,7 +52,7 @@ jobs:
           git add UPSTREAM.md
           git commit --quiet -m "docs: record upstream release, original SHA and filtered history"
           git remote add destination "https://x-access-token:${GH_TOKEN}@github.com/achirothmane/market-signal-engine.git"
-          git push destination "$EXPECTED_UPSTREAM_SHA:refs/heads/import/upstream-0.60.8"
+          git push destination "HEAD:refs/heads/import/upstream-0.60.8"
           echo "UPSTREAM_ORIGINAL_COMMIT=$actual" >> "$GITHUB_STEP_SUMMARY"
           echo "IMPORTED_HISTORY_REWRITTEN_TO_REMOVE_UPSTREAM_WORKFLOWS=true" >> "$GITHUB_STEP_SUMMARY"
           echo "IMPORT_BRANCH=import/upstream-0.60.8" >> "$GITHUB_STEP_SUMMARY"
