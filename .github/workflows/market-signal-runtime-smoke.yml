@@ -64,3 +64,15 @@ jobs:
           grep -Eqi 'change.?detect|watch' "$RUNNER_TEMP/home.html"
           echo "FORK_SOURCE_HTTP_STARTUP: PASS"
           echo "Not a persistence, remote-change detection, browser automation or production deployment test."
+      - name: Test owned HTML page baseline change and no-op through actual watch API
+        env:
+          MSE_EVIDENCE_PATH: ${{ runner.temp }}/mse-owned-page-evidence.json
+        run: python -m pytest changedetectionio/tests/test_market_signal_owned_fixture.py -q --disable-warnings --maxfail=1
+      - name: Upload redacted local evidence after successful proof
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-signal-owned-page-evidence
+          path: ${{ runner.temp }}/mse-owned-page-evidence.json
+          if-no-files-found: error
+          retention-days: 7
