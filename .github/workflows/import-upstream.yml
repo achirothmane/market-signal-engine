@@ -19,7 +19,7 @@ jobs:
           EXPECTED_UPSTREAM_SHA: "09881f8b26aa01a2be66c5f63daf54a79a42b6bd"
         run: |
           set -euo pipefail
-          git clone --quiet --no-checkout --branch "0.60.8" https://github.com/dgtlmoon/changedetection.io.git upstream
+          git clone --quiet --branch "0.60.8" https://github.com/dgtlmoon/changedetection.io.git upstream
           cd upstream
           actual="$(git rev-parse HEAD)"
           test "$actual" = "$EXPECTED_UPSTREAM_SHA"
