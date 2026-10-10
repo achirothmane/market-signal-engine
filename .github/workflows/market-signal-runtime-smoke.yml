@@ -8,6 +8,8 @@ on:
       - ".github/workflows/market-signal-runtime-smoke.yml"
       - "requirements.txt"
       - "changedetectionio/**"
+      - "scripts/**"
+      - "docs/contracts/**"
       - "changedetection.py"
   workflow_dispatch:
 permissions:
